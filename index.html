@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Datable — Pitch de Inversión</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #06060E;
+    --gold1: #C9922A;
+    --gold2: #F5D78E;
+    --blue: #00D4FF;
+    --glass: rgba(255,255,255,0.04);
+    --border: rgba(201,146,42,0.25);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--black);
+    color: #E8E8E8;
+    font-family: 'Rajdhani', sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* ENERGY LINES BG */
+  .energy-bg {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(0,212,255,0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(201,146,42,0.08) 0%, transparent 60%);
+  }
+  .energy-bg::after {
+    content:'';
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  /* NAV DOTS */
+  .nav-dots {
+    position: fixed; right: 20px; top: 50%; transform: translateY(-50%);
+    z-index: 100; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nav-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(201,146,42,0.3); cursor: pointer;
+    transition: all 0.3s; border: 1px solid var(--gold1);
+  }
+  .nav-dot.active, .nav-dot:hover { background: var(--gold1); box-shadow: 0 0 10px var(--gold1); }
+
+  /* SLIDES */
+  .slide {
+    min-height: 100vh; position: relative; z-index: 1;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 60px 40px; max-width: 900px; margin: 0 auto;
+  }
+
+  /* GLASS CARD */
+  .glass {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    backdrop-filter: blur(20px);
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  .glass::before {
+    content:'';
+    position:absolute; top:0; left:0; right:0; height:1px;
+    background: linear-gradient(90deg, transparent, var(--gold1), transparent);
+    opacity: 0.6;
+  }
+
+  /* TYPOGRAPHY */
+  .label {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px; letter-spacing: 4px;
+    color: var(--blue); text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(28px, 6vw, 52px);
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--gold1), var(--gold2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    line-height: 1.1; margin-bottom: 8px;
+  }
+  h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(18px, 3.5vw, 28px);
+    color: var(--gold2); margin-bottom: 20px; font-weight: 700;
+  }
+  h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px; color: var(--blue);
+    margin-bottom: 10px; letter-spacing: 2px;
+  }
+  p, li {
+    font-size: clamp(14px, 2.5vw, 17px);
+    line-height: 1.7; color: #C8C8D8;
+    font-weight: 300;
+  }
+  strong { color: var(--gold2); font-weight: 600; }
+
+  /* DIVIDER */
+  .divider {
+    height: 1px; margin: 24px 0;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+  }
+
+  /* STAT GRID */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-top: 24px; }
+  .stat-box {
+    background: rgba(0,212,255,0.04);
+    border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 12px; padding: 20px 16px; text-align: center;
+  }
+  .stat-num {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(20px, 4vw, 30px); font-weight: 900;
+    background: linear-gradient(135deg, var(--gold1), var(--gold2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat-label { font-size: 12px; color: #8888AA; margin-top: 4px; letter-spacing: 1px; text-transform: uppercase; }
+
+  /* LIST ITEMS */
+  .item-list { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+  .item-list li {
+    display: flex; align-items: flex-start; gap: 12px;
+  }
+  .item-list li::before {
+    content: '▸'; color: var(--blue); font-size: 14px; flex-shrink: 0; margin-top: 2px;
+  }
+
+  /* VS TABLE */
+  .vs-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+  .vs-table th {
+    font-family: 'Orbitron', sans-serif; font-size: 11px;
+    letter-spacing: 2px; padding: 12px 16px; text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .vs-table th:first-child { color: #666; }
+  .vs-table th.ours { color: var(--gold1); }
+  .vs-table td { padding: 10px 16px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .vs-table td.check { color: #00FF88; font-size: 18px; }
+  .vs-table td.cross { color: #FF4466; font-size: 18px; }
+  .vs-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* USE FUNDS */
+  .fund-bar { margin: 12px 0; }
+  .fund-label { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; }
+  .fund-label span:first-child { color: #C8C8D8; }
+  .fund-label span:last-child { color: var(--gold2); font-weight: 600; font-family: 'Orbitron', sans-serif; font-size: 12px; }
+  .bar-track { height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; }
+  .bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--gold1), var(--gold2)); }
+
+  /* HERO SECTION */
+  .hero-sub {
+    font-size: clamp(15px, 3vw, 20px);
+    color: #9090B0; margin-top: 12px; line-height: 1.6;
+  }
+  .hero-tagline {
+    font-family: 'Orbitron', sans-serif; font-size: 11px;
+    letter-spacing: 3px; color: var(--blue);
+    margin-top: 20px; opacity: 0.8;
+  }
+  .cta-box {
+    margin-top: 32px; padding: 24px;
+    background: linear-gradient(135deg, rgba(201,146,42,0.1), rgba(0,212,255,0.05));
+    border: 1px solid var(--gold1); border-radius: 12px;
+    text-align: center;
+  }
+  .cta-box p { font-size: 16px; color: var(--gold2); }
+  .cta-contact {
+    font-family: 'Orbitron', sans-serif; font-size: 13px;
+    color: var(--blue); margin-top: 8px; letter-spacing: 1px;
+  }
+
+  /* SLIDE NUMBER */
+  .slide-num {
+    position: absolute; bottom: 24px; right: 24px;
+    font-family: 'Orbitron', sans-serif; font-size: 10px;
+    color: rgba(201,146,42,0.3); letter-spacing: 2px;
+  }
+
+  /* ANIMATIONS */
+  .slide { opacity: 0; transform: translateY(30px); transition: opacity 0.7s, transform 0.7s; }
+  .slide.visible { opacity: 1; transform: none; }
+
+  /* PRINT */
+  @media print {
+    .nav-dots { display: none; }
+    .slide { opacity: 1 !important; transform: none !important; page-break-after: always; }
+  }
+</style>
+</head>
+<body>
+
+<div class="energy-bg"></div>
+
+<div class="nav-dots" id="navDots"></div>
+
+<!-- SLIDE 1: PORTADA -->
+<div class="slide" id="slide-1">
+  <div class="label">Oportunidad de Inversión · 2025</div>
+  <h1>Datable</h1>
+  <p class="hero-sub">
+    La plataforma de inteligencia artificial que digitaliza y automatiza<br>
+    los <strong>6 millones de pequeños negocios en México</strong> que aún operan a mano.
+  </p>
+  <p class="hero-tagline">LA INFRAESTRUCTURA DIGITAL DEL NEGOCIO MEXICANO</p>
+  <div class="divider"></div>
+  <div class="stat-grid">
+    <div class="stat-box">
+      <div class="stat-num">$499</div>
+      <div class="stat-label">MXN / mes</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">6M+</div>
+      <div class="stat-label">Negocios objetivo</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">$10-15k</div>
+      <div class="stat-label">USD buscados</div>
+    </div>
+  </div>
+  <div class="slide-num">01 / 08</div>
+</div>
+
+<!-- SLIDE 2: PROBLEMA -->
+<div class="slide" id="slide-2">
+  <div class="glass">
+    <div class="label">El Problema</div>
+    <h2>Millones de negocios atrapados en el siglo pasado</h2>
+    <ul class="item-list">
+      <li>Las salones, talleres, clínicas, restaurantes y boutiques de México <strong>siguen usando libretas, WhatsApp y Excel</strong> para gestionar su negocio.</li>
+      <li>No tienen diagnóstico de su salud financiera. <strong>No saben qué los está matando</strong> hasta que ya es tarde.</li>
+      <li>Las soluciones existentes son complicadas, caras o hechas para empresas grandes — <strong>no para el negocio de la esquina</strong>.</li>
+      <li>Resultado: <strong>7 de cada 10 PyMEs cierran antes de 2 años</strong> por falta de control y visibilidad.</li>
+    </ul>
+    <div class="slide-num">02 / 08</div>
+  </div>
+</div>
+
+<!-- SLIDE 3: SOLUCIÓN -->
+<div class="slide" id="slide-3">
+  <div class="glass">
+    <div class="label">La Solución</div>
+    <h2>Un cerebro digital para cada negocio</h2>
+    <p>Datable es una plataforma SaaS con IA que en <strong>menos de 5 minutos</strong> le da a cualquier dueño de negocio:</p>
+    <ul class="item-list" style="margin-top:16px">
+      <li><strong>Diagnóstico personalizado con IA</strong> — detecta exactamente qué está fallando y cuánto dinero está perdiendo.</li>
+      <li><strong>Herramientas automáticas</strong> — agenda, inventario, clientes, reportes, todo conectado.</li>
+      <li><strong>Recomendaciones accionables</strong> — no datos crudos, sino pasos concretos para crecer.</li>
+      <li><strong>Sin curva de aprendizaje</strong> — diseñado para que cualquier persona lo use desde el día uno.</li>
+    </ul>
+    <div class="slide-num">03 / 08</div>
+  </div>
+</div>
+
+<!-- SLIDE 4: DIFERENCIADORES -->
+<div class="slide" id="slide-4">
+  <div class="glass">
+    <div class="label">Ventaja Competitiva</div>
+    <h2>¿Por qué Datable gana?</h2>
+    <table class="vs-table">
+      <thead>
+        <tr>
+          <th>Característica</th>
+          <th class="ours">Datable</th>
+          <th style="color:#666">Competencia</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Diagnóstico IA personalizado</td>
+          <td class="check">✓</td>
+          <td class="cross">✗</td>
+        </tr>
+        <tr>
+          <td>Valor antes de registrarse</td>
+          <td class="check">✓</td>
+          <td class="cross">✗</td>
+        </tr>
+        <tr>
+          <td>Diseñado para PyME mexicana</td>
+          <td class="check">✓</td>
+          <td class="cross">✗</td>
+        </tr>
+        <tr>
+          <td>Herramientas integradas en 1 lugar</td>
+          <td class="check">✓</td>
+          <td style="color:#FFAA33; font-size:18px">~</td>
+        </tr>
+        <tr>
+          <td>Precio accesible ($499 MXN/mes)</td>
+          <td class="check">✓</td>
+          <td class="cross">✗</td>
+        </tr>
+        <tr>
+          <td>Programa de embajadores</td>
+          <td class="check">✓</td>
+          <td class="cross">✗</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="slide-num">04 / 08</div>
+  </div>
+</div>
+
+<!-- SLIDE 5: TRACCIÓN -->
+<div class="slide" id="slide-5">
+  <div class="glass">
+    <div class="label">Tracción</div>
+    <h2>Ya funciona. Ya cobra. Ya crece.</h2>
+    <ul class="item-list">
+      <li><strong>Prototipo funcional</strong> con IA de diagnóstico personalizado operando en producción.</li>
+      <li><strong>Primeros clientes pagando</strong> — validación real del mercado, no solo hipótesis.</li>
+      <li><strong>Stack técnico probado:</strong> GitHub Pages + Supabase + Stripe + Anthropic API.</li>
+      <li><strong>Programa de embajadores</strong> diseñado para crecimiento orgánico viral — 100% de primera comisión + 10% recurrente.</li>
+      <li><strong>Conversión sin fricción:</strong> 48 horas de acceso gratuito antes de pedir registro — filosofía validada.</li>
+    </ul>
+    <div class="slide-num">05 / 08</div>
+  </div>
+</div>
+
+<!-- SLIDE 6: MERCADO -->
+<div class="slide" id="slide-6">
+  <div class="glass">
+    <div class="label">Mercado</div>
+    <h2>El mercado más grande e ignorado de México</h2>
+    <div class="stat-grid">
+      <div class="stat-box">
+        <div class="stat-num">6M+</div>
+        <div class="stat-label">PyMEs en México</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">72%</div>
+        <div class="stat-label">Sin herramientas digitales</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">$3.5B</div>
+        <div class="stat-label">USD mercado SaaS PyME MX</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <p>Capturar <strong>0.1% del mercado</strong> son 6,000 clientes × $499 MXN/mes = <strong>$3M MXN mensuales recurrentes.</strong></p>
+    <div class="slide-num">06 / 08</div>
+  </div>
+</div>
+
+<!-- SLIDE 7: USO DE FONDOS -->
+<div class="slide" id="slide-7">
+  <div class="glass">
+    <div class="label">Uso de Fondos · $10,000 – $15,000 USD</div>
+    <h2>Cada dólar tiene un destino claro</h2>
+
+    <div class="fund-bar">
+      <div class="fund-label"><span>Marketing y adquisición de clientes</span><span>40%</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:40%"></div></div>
+    </div>
+    <div class="fund-bar">
+      <div class="fund-label"><span>Desarrollo técnico y producto</span><span>30%</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:30%"></div></div>
+    </div>
+    <div class="fund-bar">
+      <div class="fund-label"><span>Ventas y expansión de canales</span><span>20%</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:20%"></div></div>
+    </div>
+    <div class="fund-bar">
+      <div class="fund-label"><span>Operaciones y legal</span><span>10%</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:10%"></div></div>
+    </div>
+
+    <div class="divider"></div>
+    <p>Meta a <strong>12 meses:</strong> 200 clientes activos = $99,800 MXN/mes recurrentes — punto de auto-sustentabilidad.</p>
+    <div class="slide-num">07 / 08</div>
+  </div>
+</div>
+
+<!-- SLIDE 8: CIERRE -->
+<div class="slide" id="slide-8">
+  <div class="label">Únete a la Misión</div>
+  <h2>El negocio mexicano merece tecnología de clase mundial</h2>
+  <p style="font-size:16px; margin-bottom:24px; color:#9090B0;">
+    No estamos construyendo otra app. Estamos construyendo la <strong>infraestructura digital</strong> que millones de familias mexicanas necesitan para sobrevivir y crecer en la economía moderna.
+  </p>
+  <div class="glass" style="margin-bottom:24px">
+    <h3>Lo que ofrecemos al inversionista</h3>
+    <ul class="item-list" style="margin-top:8px">
+      <li>Participación en empresa con <strong>tracción real y producto funcional</strong>.</li>
+      <li>Mercado de 6M+ negocios con <strong>competencia fragmentada y débil</strong>.</li>
+      <li>Fundadora con <strong>background en ventas</strong> — sabe cerrar, sabe crecer.</li>
+      <li>Modelo SaaS recurrente — <strong>ingresos predecibles y escalables</strong>.</li>
+    </ul>
+  </div>
+  <div class="cta-box">
+    <p>¿Listo para ser parte de la digitalización de México?</p>
+    <div class="cta-contact">D4tabl3@gmail.com · datable.com.mx</div>
+  </div>
+  <div class="slide-num">08 / 08</div>
+</div>
+
+<script>
+  // Intersection Observer for animations
+  const slides = document.querySelectorAll('.slide');
+  const dots = document.getElementById('navDots');
+
+  slides.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'nav-dot';
+    dot.onclick = () => slides[i].scrollIntoView({ behavior: 'smooth' });
+    dots.appendChild(dot);
+  });
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        const idx = Array.from(slides).indexOf(entry.target);
+        document.querySelectorAll('.nav-dot').forEach((d, i) => {
+          d.classList.toggle('active', i === idx);
+        });
+      }
+    });
+  }, { threshold: 0.3 });
+
+  slides.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
